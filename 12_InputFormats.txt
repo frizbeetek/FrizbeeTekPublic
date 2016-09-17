@@ -1,0 +1,49 @@
+TextInputFormat
+KeyValueTextInputFormat
+MultiFileInputFormat
+NLineInputFormat
+FixedLengthInputFormat
+SequenceFileInputFormat
+CombineFileInputFormat
+
+
+
+TextInputFormat
+<<===============>>
+
+
+KeyValueTextInputFormat
+<<===========>>
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+
+extends Mapper<Text, Text, Text, IntWritable>
+
+
+job.setInputFormatClass(KeyValueTextInputFormat.class);
+
+
+
+
+
+NLineInputFormat
+http://hadooped.blogspot.in/2013/09/nlineinputformat-in-java-mapreduce-use.html
+<<=============>>
+job.setInputFormatClass(NLineInputFormat.class);
+job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 10000);
+LazyOutputFormat.setOutputFormatClass(job, TextOutputFormat.class);
+
+
+
+FixedLengthInputFormat
+<<=================>>
+FixedLengthInputFormat.setRecordLength(myJob,[myFixedRecordLength])
+FixedLengthInputFormat.setRecordKeyStartAt(myJob,[start at position, INCLUSIVE]);
+ * FixedLengthInputFormat.setRecordKeyEndAt(myJob,[end at position, INCLUSIVE]);
+ * FixedLengthInputFormat.setRecordKeyBoundaries(myJob,[start],[end]);
+
+
+MultiFileInputFormat
+<<===================>>
+
+SequenceFileInputFormat
+
