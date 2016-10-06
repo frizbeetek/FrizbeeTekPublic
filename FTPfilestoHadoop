@@ -1,0 +1,107 @@
+HADOOP Data Ingestion
+
+Section1) 
+FTP ( Data movement from FTP to HADOOP Landing)
+
+
+
+
+
+
+
+FTP code to transfer Files
+
+SCRIPT_DIR="/dc01/iap1/ftphome/sap/"
+. ${SCRIPT_DIR}/transactions
+
+cur_date=`date +'%m%d%Y'`
+
+ftp_file=${FTP_FILENAME_PREFIX}"*"${cur_date}".csv"
+log="${LOGDIR}/ftp_${cur_date}.log" 
+host=`hostname` 
+rc=0 
+boj=`date` 
+
+
+
+cd ${SRCDIR}
+#If not deployed correctly will give the following system failure
+if [ "$?" -ne "0" ]; then
+   echo " Invalid Source File Path $SRCDIR " | mailx -s "IMPORTANT!!TransactionProcess $cur_date FTP Failed" $SUPPORT_EMAIL 
+   exit 1
+fi
+
+
+################### FTP block Start ######################
+
+exec 1>$log 2>&1 
+echo "---------------------------------------------------" 
+echo "              Begin FTP Session  " 
+echo "---------------------------------------------------" 
+echo "open  $FTP_SERVER 
+      quote USER $FTP_USER 
+      quote PASS $FTP_PWD 
+      cd $FTP_DIR
+      verbose
+      prompt
+      mget $ftp_file   
+      close 
+      quit" |$FTP -n 
+echo "---------------------------------------------------" 
+echo "Target FTP Location is : $SRCDIR "
+echo "                End FTP Session  " 
+echo "---------------------------------------------------" 
+
+################## FTP block ends ########################
+
+# Check the log file for FTP status 
+
+foo=`grep -i "Transfer complete" $log`
+if [ $? -eq 0 ] ; then
+   status="Successful"
+   rc=0
+else
+   no_files=`grep -i "No such file or directory" $log` 
+   echo "NO_FILES = $no_files"
+   if [ $? -eq 0 ]; then
+      rc=1
+      status="No files to FTP"
+   else
+      rc=2
+      status="FTP Process Failed"
+   fi
+fi
+
+
+ echo "FTP Program Completed" | mailx -s "FTP Program completed `date`" ${SUPPORT_EMAIL}
+
+
+
+
+Section 2)  Transfer files from Landing to HDFS
+Hadoop_server=
+Name_node=
+Port=
+srcFilename=
+targetdir=
+archiveDir
+
+hrun=`hadoop fs –put  $srcfilename $targetdir `
+if [ $? -eq 0 ] ; then
+   status="Successful"
+   rc=0
+else
+      status="put process failed"
+fi
+
+echo "FTP Program Completed" | mailx -s "FTP Program completed with status $status `date`" ${SUPPORT_EMAIL}
+
+gzip ${srcfilename }
+
+mv ${srcfilename }.gz ${archiveDir}
+
+
+
+
+
+
