@@ -1,0 +1,136 @@
+
+import java.io.*;
+import java.util.*;
+import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.filecache.DistributedCache;
+//import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+//import org.apache.hadoop.util.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.conf.Configuration;
+//import org.apache.hadoop.conf.Configured;
+//import org.apache.hadoop.fs.FileSystem;
+//import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+
+
+public class SimpleMR
+{
+	
+	
+	
+	public static class Map1 extends Mapper<LongWritable,Text,Text,IntWritable>
+	{
+		
+		
+		public void map(LongWritable key,Text value,Context context) throws IOException,InterruptedException
+		{
+			
+			String s=value.toString();
+			
+			String[] cols=s.split(",");
+			
+			String deptno=new String(cols[3]);
+			
+			int sal=Integer.valueOf(cols[2]);
+			
+			IntWritable out2 = new IntWritable(sal);
+			Text out1=new Text(deptno);
+			
+			
+			
+			context.write(out1, out2);
+			
+			
+			
+			
+		}
+		
+		
+	}
+	
+	
+	public static class Red1 extends Reducer<Text,IntWritable,Text,IntWritable>
+	{
+		
+		
+		public void reduce(Text key,Iterable<IntWritable> value,Context context) throws IOException,InterruptedException
+		{
+
+			
+			Iterator<IntWritable> it=value.iterator();
+			
+			int x=0;
+			
+			while (it.hasNext())
+			{
+				x=x+it.next().get();
+				
+				
+			}
+			
+			context.write(key, new IntWritable(x));
+			
+		}
+		
+		
+		
+	}
+	
+	
+	
+	public static void main (String args[]) throws Exception
+	{
+		
+		Configuration conf=new Configuration();
+		Job job=Job.getInstance(conf,"job1");
+		
+		
+		job.setInputFormatClass(TextInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+		
+		FileInputFormat.addInputPath(job, new Path("/home/cloudera/b100/mrinput/emp.txt"));
+		FileOutputFormat.setOutputPath(job, new Path("/home/cloudera/b100/mrout2"));
+		
+		
+		FileInputFormat.setMaxInputSplitSize(job, 20);
+		
+		job.setMapOutputKeyClass(Text.class);
+		
+		job.setMapOutputValueClass(IntWritable.class);
+		
+		
+		job.setMapperClass(Map1.class);
+		
+		job.setCombinerClass(Red1.class);
+		
+		//job.setReducerClass(Red1.class);
+		
+		job.setJarByClass(SimpleMR.class);
+		
+		job.waitForCompletion(true);
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	}
+	
+	
+}

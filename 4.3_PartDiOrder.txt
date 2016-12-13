@@ -1,0 +1,182 @@
+
+
+import java.io.*;
+import java.util.*;
+
+import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+//import org.apache.hadoop.util.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+//import org.apache.hadoop.fs.FileSystem;
+//import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+
+
+public class MapOnly103 
+{
+
+//Mapper
+	
+	public static class Map1 extends Mapper<LongWritable,Text,Text,IntWritable>
+	{
+		
+		
+		public void map(LongWritable k,Text v,Context context) throws InterruptedException,IOException
+		{
+			
+					
+					
+			String s=v.toString();
+						
+			String[] dept=s.split(",");
+			
+			String deptno = dept[3];
+			String sal= dept[2];
+			
+			int salint =Integer.parseInt(sal);
+			
+					
+			context.write(new Text(deptno), new IntWritable(salint));
+			
+			
+			
+		}
+		
+		
+	}
+	
+	
+	public static class Part1 extends Partitioner<Text,IntWritable>
+	{
+		
+		
+		public int getPartition(Text k,IntWritable v,int p)
+		{
+			
+			
+			
+			//String deptno=k.toString();
+			
+			int x=v.get();
+			
+			if (x<1300)
+			{
+			
+			return 0;
+			}
+			else
+			{
+				return 1;
+			}
+			
+		}
+		
+	}
+	
+	
+	
+	public static class Red1 extends Reducer<Text,IntWritable,Text,IntWritable>
+	{
+		
+		public void reduce(Text deptk,Iterable<IntWritable> salv,Context context) throws InterruptedException,IOException
+		{
+			
+			
+			Iterator<IntWritable> it = salv.iterator();
+					
+					int totalsal=0;
+					
+					while (it.hasNext())
+					{
+						
+						totalsal=totalsal+it.next().get();
+						
+					}
+			
+			
+			context.write(deptk, new IntWritable(totalsal));
+			
+			
+			
+			
+		}
+		
+		
+	}
+	
+	
+	public static void main(String[] args)  throws Exception
+	
+	{
+		
+		
+		System.out.println("MR 103");
+				
+		
+		Configuration conf= new Configuration();
+		
+		// gets the Configuration of hdfs..
+		
+		Job job = Job.getInstance(conf,"Job103");
+		
+		
+		//Path outp=new Path("/user/cloudera/b103/mrword/out1");
+				
+				//Path inp=new Path(args[0]);
+				
+				//Path outp=new Path(args[1]);// out folder is created by MR
+		
+	
+				//FileInputFormat.addInputPath(job, inp);
+			//FileInputFormat.addInputPath(job, new Path("/user/cloudera/b103/mrword/out1"));
+		
+				FileInputFormat.addInputPath(job, new Path("/home/cloudera/b103/mr103/mrinput1"));
+				
+				FileOutputFormat.setOutputPath(job, new Path("/home/cloudera/b103/mr103/mrout1"));
+				// In case MR does not have Reduce function then Mapper output is written to this file
+				// For every Reducer Task there will be one File created under this folder
+				
+				
+				FileInputFormat.setMaxInputSplitSize(job, 40);
+				
+				job.setInputFormatClass(TextInputFormat.class);
+				// Always reads data in text format in Key,Value combination
+				// Key is offset value(line position) value is line
+				// key is LongWritable and Value is Text
+				
+				
+				
+				job.setMapperClass(Map1.class);
+				
+				//job.setCombinerClass(Red1.class);
+				
+				job.setReducerClass(Red1.class);
+				
+				job.setNumReduceTasks(2);
+				
+				job.setPartitionerClass(Part1.class);
+				
+				job.setMapOutputKeyClass(Text.class);
+				
+				job.setMapOutputValueClass(IntWritable.class);
+				
+				
+				job.setJarByClass(MapOnly103.class);
+				
+				job.waitForCompletion(true);
+				
+					
+	}
+
+	
+}

@@ -1,0 +1,1 @@
+FileInputFormat.setMaxInputSplitSize(job, 10);
