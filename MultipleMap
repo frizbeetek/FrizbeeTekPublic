@@ -1,0 +1,124 @@
+import java.io.*;
+import java.util.*;
+
+import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Mapper.Context;
+//import org.apache.hadoop.util.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+//import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+
+
+
+
+
+public class MultiMap112 
+{
+
+	
+	public static class MapEmp extends Mapper<LongWritable,Text,Text,Text>
+	{
+		
+	
+		public void map(LongWritable k,Text v,Context context) throws InterruptedException,IOException
+		{
+			
+			String line=v.toString();
+			
+			String emp[]=line.split(",");
+			
+			
+			String deptno=emp[3];
+			
+			context.write(new Text(deptno),new Text(line));
+			
+			
+		}
+		
+		
+		
+	}
+	
+	
+	
+	public static class MapDept extends Mapper<LongWritable,Text,Text,Text>
+	{
+		
+	
+		public void map(LongWritable k,Text v,Context context) throws InterruptedException,IOException
+		{
+			
+		
+			String line=v.toString();
+			
+			String dept[]=line.split(",");
+			
+			
+			String deptno=dept[0];
+			
+			context.write(new Text(deptno),new Text(line));
+			
+			
+			
+		}
+		
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	public static void main(String[] args) throws Exception
+	{
+		
+		
+		Configuration conf = new Configuration();
+	    Job job =Job.getInstance(conf,"job1");	
+		
+	    MultipleInputs.addInputPath(job, new Path("/home/cloudera/b112/mr112/emp.csv"),TextInputFormat.class, MapEmp.class);
+	    
+	    
+	    MultipleInputs.addInputPath(job, new Path("/home/cloudera/b112/mr112/dept.csv"),TextInputFormat.class, MapDept.class);
+	    
+	    
+	    
+	    
+	//	FileInputFormat.addInputPath(job, new Path("/home/cloudera/b112/mr112/dept.csv"));	
+				
+		FileOutputFormat.setOutputPath(job, new Path("/home/cloudera/b112/mr112/multimap"));
+		
+		
+		//job.setInputFormatClass(TextInputFormat.class);
+		
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+		
+		
+		
+		job.setJarByClass(MultiMap112.class);
+		
+		job.waitForCompletion(true);
+		
+		
+		
+		
+	}
+
+}
