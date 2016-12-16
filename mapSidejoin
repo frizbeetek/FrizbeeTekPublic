@@ -1,0 +1,154 @@
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Mapper.Context;
+
+import java.io.BufferedReader;
+import java.util.HashMap;
+
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
+
+import java.io.*;
+import java.util.*;
+import java.net.URI;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.filecache.DistributedCache;
+//import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+//import org.apache.hadoop.util.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.conf.Configuration;
+//import org.apache.hadoop.conf.Configured;
+//import org.apache.hadoop.fs.FileSystem;
+//import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+
+public class DCacheSinglePr 
+{
+
+
+	
+	public static class DCacheMap1 extends Mapper<LongWritable, Text, Text, Text>
+	{
+		
+	private static HashMap<String, String> DepartmentMap = new HashMap<String, String>();
+	private BufferedReader brReader;
+	private String strDeptName = "";
+	private Text txtMapOutputKey = new Text("");
+	private Text txtMapOutputValue = new Text("");	
+	
+	
+	
+	protected void setup(Context context) throws IOException,InterruptedException 
+	{
+
+	
+	
+		URI[] files = context.getCacheFiles(); // getCacheFiles returns null
+
+	    Path cacheFilesLocal = new Path(files[0]);
+	    
+	    String strLineRead = "";
+	    brReader = new BufferedReader(new FileReader(cacheFilesLocal.toString()));
+	    while ((strLineRead = brReader.readLine()) != null) 
+		{
+			String deptFieldArray[] = strLineRead.split("\\t");
+			DepartmentMap.put(deptFieldArray[0].trim(),deptFieldArray[1].trim());
+		}
+				
+					
+			}
+
+		
+	
+	
+	public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException 
+	{
+
+		if (value.toString().length() > 0) {
+			String arrEmpAttributes[] = value.toString().split("\\t");
+
+			
+				strDeptName = DepartmentMap.get(arrEmpAttributes[6].toString());
+			
+
+			txtMapOutputKey.set(arrEmpAttributes[0].toString());
+
+			txtMapOutputValue.set(arrEmpAttributes[1].toString() + "|"+ arrEmpAttributes[1].toString() + "|"+ arrEmpAttributes[2].toString() + "|"+ arrEmpAttributes[3].toString() + "|"+ arrEmpAttributes[4].toString() + "|"+ arrEmpAttributes[5].toString() + "|"+ arrEmpAttributes[6].toString() + "|" + strDeptName);
+
+		}
+		
+		context.write(txtMapOutputKey, txtMapOutputValue);
+		strDeptName = "";
+	}
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	public static void main(String[] args) throws Exception
+	{
+	
+		
+		Configuration conf=new Configuration();
+		Job job=Job.getInstance(conf,"job1");
+		
+		job.addCacheFile(new Path("/home/cloudera/b100/dcachein/departments_txt").toUri());
+		
+		
+		job.setInputFormatClass(TextInputFormat.class);
+		
+		
+		job.setOutputFormatClass(TextOutputFormat.class);
+		
+		FileInputFormat.addInputPath(job, new Path("/home/cloudera/b100/dcachein/employees_tsv"));
+		FileOutputFormat.setOutputPath(job, new Path("/home/cloudera/b100/dcout2"));
+		
+		
+		
+		
+		job.setMapOutputKeyClass(Text.class);
+		
+		job.setMapOutputValueClass(Text.class);
+		
+		
+		job.setMapperClass(DCacheMap1.class);
+		
+		job.setNumReduceTasks(0);
+		
+		//job.setCombinerClass(Red1.class);
+		
+		//job.setReducerClass(Red1.class);
+		
+		job.setJarByClass(DCacheSinglePr.class);
+		
+		job.waitForCompletion(true);
+		
+	
+		
+		
+
+	}
+
+}
